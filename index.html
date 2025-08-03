@@ -171,8 +171,15 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query, deleteDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO", authDomain: "DEMO", projectId: "DEMO" };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'digital-shop-ledger';
+       const firebaseConfig = {
+  apiKey: "AIzaSyACnJYn5dc89ZDfpFPpDwboN-DfRDJLbe4",
+  authDomain: "my-shop-ledger.firebaseapp.com",
+  projectId: "my-shop-ledger",
+  storageBucket: "my-shop-ledger.firebasestorage.app",
+  messagingSenderId: "701734588184",
+  appId: "1:701734588184:web:6e7ffca1af9a8843e9986d"
+};
+
         
         let db, auth, userId, currentWorkerName;
         let ledgerUnsubscribe = null;
