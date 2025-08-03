@@ -111,7 +111,6 @@
                             </thead>
                             <tbody id="ledger-body" class="bg-white divide-y divide-gray-200"></tbody>
                         </table>
-                        <p id="no-history-message" class="text-center text-gray-500 py-12 hidden">No records found.</p>
                     </div>
                 </div>
             </div>
@@ -171,7 +170,7 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query, deleteDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-       const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyACnJYn5dc89ZDfpFPpDwboN-DfRDJLbe4",
   authDomain: "my-shop-ledger.firebaseapp.com",
   projectId: "my-shop-ledger",
@@ -189,7 +188,6 @@
         const screens = document.querySelectorAll('.screen');
         const navButtons = document.querySelectorAll('.nav-btn');
         const ledgerBody = document.getElementById('ledger-body');
-        const noHistoryMessage = document.getElementById('no-history-message');
         const userIdEl = document.getElementById('userId');
         const copyLinkBtn = document.getElementById('copy-link-btn');
         const toastEl = document.getElementById('toast');
@@ -220,11 +218,12 @@
             newEntryRow.className = 'bg-green-50';
             renderEditableRow(newEntryRow, {});
             ledgerBody.appendChild(newEntryRow);
-            document.getElementById('new-date').value = toISODate(new Date());
 
-            if (records.length === 0) { noHistoryMessage.classList.add('hidden'); } 
-            else {
-                noHistoryMessage.classList.add('hidden');
+            if (records.length === 0) {
+                const noRecordsRow = document.createElement('tr');
+                noRecordsRow.innerHTML = `<td colspan="10" class="text-center text-gray-500 py-12">No records found. Add your first entry above!</td>`;
+                ledgerBody.appendChild(noRecordsRow);
+            } else {
                 records.forEach(record => {
                     const row = document.createElement('tr');
                     row.className = 'historical-row';
@@ -289,31 +288,31 @@
                     ${!isNew ? `<button class="cancel-edit-btn mt-2 text-xs text-gray-500 hover:underline">Cancel</button>` : ''}
                 </td>
             `;
-            updateLiveTotal(idPrefix);
+            updateLiveTotal(rowEl, idPrefix);
         }
         
-        function updateLiveTotal(idPrefix) {
-            const getVal = (id) => {
-                const el = document.getElementById(id);
+        function updateLiveTotal(rowEl, idPrefix) {
+            const getVal = (selector) => {
+                const el = rowEl.querySelector(selector);
                 return el ? (parseFloat(el.value) || 0) : 0;
             };
-            const total = getVal(`${idPrefix}-mpesa-float`) + getVal(`${idPrefix}-mpesa-cash`) + getVal(`${idPrefix}-credit-cards`) + getVal(`${idPrefix}-credit-cash`) + getVal(`${idPrefix}-shop-cash`) + getVal(`${idPrefix}-shop-till`);
-            const totalEl = document.getElementById(`${idPrefix}-total`);
+            const total = getVal(`#${idPrefix}-mpesa-float`) + getVal(`#${idPrefix}-mpesa-cash`) + getVal(`#${idPrefix}-credit-cards`) + getVal(`#${idPrefix}-credit-cash`) + getVal(`#${idPrefix}-shop-cash`) + getVal(`#${idPrefix}-shop-till`);
+            const totalEl = rowEl.querySelector(`#${idPrefix}-total`);
             if (totalEl) {
                 totalEl.textContent = formatCurrency(total);
             }
         }
 
-        async function handleSave(idPrefix, recordId) {
-            const getVal = (id) => {
-                const el = document.getElementById(id);
+        async function handleSave(rowEl, idPrefix, recordId) {
+            const getVal = (selector) => {
+                const el = rowEl.querySelector(selector);
                 return el ? (parseFloat(el.value) || 0) : 0;
             };
-            const getSelectVal = (id) => {
-                const el = document.getElementById(id);
+            const getSelectVal = (selector) => {
+                const el = rowEl.querySelector(selector);
                 return el ? el.value : '';
             }
-            const dateEl = document.getElementById(`${idPrefix}-date`);
+            const dateEl = rowEl.querySelector(`#${idPrefix}-date`);
             const dateVal = dateEl ? dateEl.value : '';
 
             if (!dateVal) {
@@ -334,13 +333,13 @@
 
             const recordData = {
                 date: new Date(dateVal),
-                worker: getSelectVal(`${idPrefix}-worker`),
-                mpesaFloat: getVal(`${idPrefix}-mpesa-float`),
-                mpesaCash: getVal(`${idPrefix}-mpesa-cash`),
-                creditCards: getVal(`${idPrefix}-credit-cards`),
-                creditCash: getVal(`${idPrefix}-credit-cash`),
-                shopCash: getVal(`${idPrefix}-shop-cash`),
-                shopTill: getVal(`${idPrefix}-shop-till`),
+                worker: getSelectVal(`#${idPrefix}-worker`),
+                mpesaFloat: getVal(`#${idPrefix}-mpesa-float`),
+                mpesaCash: getVal(`#${idPrefix}-mpesa-cash`),
+                creditCards: getVal(`#${idPrefix}-credit-cards`),
+                creditCash: getVal(`#${idPrefix}-credit-cash`),
+                shopCash: getVal(`#${idPrefix}-shop-cash`),
+                shopTill: getVal(`#${idPrefix}-shop-till`),
                 createdAt: createdAt
             };
             
@@ -356,7 +355,7 @@
                     const newEntryRow = document.getElementById('new-entry-row');
                     if (newEntryRow) {
                         newEntryRow.querySelectorAll('input[type="number"]').forEach(input => input.value = '');
-                        updateLiveTotal('new');
+                        updateLiveTotal(newEntryRow, 'new');
                     }
                 }
             } catch (error) {
@@ -414,20 +413,23 @@
         function attachEventListeners() {
             ledgerBody.querySelectorAll('input[type="number"]').forEach(input => {
                 input.addEventListener('input', (e) => {
+                    const row = e.target.closest('tr');
                     const idPrefix = e.target.id.substring(0, e.target.id.lastIndexOf('-'));
-                    updateLiveTotal(idPrefix);
+                    updateLiveTotal(row, idPrefix);
                 });
             });
 
             ledgerBody.addEventListener('click', (e) => {
+                const row = e.target.closest('tr');
+                if (!row) return;
+
                 if (e.target.closest('.save-btn')) {
-                    const row = e.target.closest('tr');
                     const idPrefix = row.querySelector('input, select').id.substring(0, row.querySelector('input, select').id.lastIndexOf('-'));
-                    handleSave(idPrefix, row.dataset.id);
+                    handleSave(row, idPrefix, row.dataset.id);
                 }
-                if (e.target.closest('.delete-btn')) { handleDelete(e.target.closest('tr').dataset.id); }
+                if (e.target.closest('.delete-btn')) { handleDelete(row.dataset.id); }
                 if (e.target.closest('.edit-btn')) {
-                    editingRowId = e.target.closest('tr').dataset.id;
+                    editingRowId = row.dataset.id;
                     listenToLedger();
                 }
                 if (e.target.closest('.cancel-edit-btn')) {
