@@ -111,7 +111,7 @@
                             </thead>
                             <tbody id="ledger-body" class="bg-white divide-y divide-gray-200"></tbody>
                         </table>
-                        <p id="no-history-message" class="text-center text-gray-500 py-12">No records found.</p>
+                        <p id="no-history-message" class="text-center text-gray-500 py-12 hidden">No records found.</p>
                     </div>
                 </div>
             </div>
@@ -179,7 +179,6 @@
   messagingSenderId: "701734588184",
   appId: "1:701734588184:web:6e7ffca1af9a8843e9986d"
 };
-
         
         let db, auth, userId, currentWorkerName;
         let ledgerUnsubscribe = null;
@@ -223,9 +222,9 @@
             ledgerBody.appendChild(newEntryRow);
             document.getElementById('new-date').value = toISODate(new Date());
 
-            if (records.length === 0) { noHistoryMessage.style.display = 'table-row'; } 
+            if (records.length === 0) { noHistoryMessage.classList.add('hidden'); } 
             else {
-                noHistoryMessage.style.display = 'none';
+                noHistoryMessage.classList.add('hidden');
                 records.forEach(record => {
                     const row = document.createElement('tr');
                     row.className = 'historical-row';
