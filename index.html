@@ -167,9 +167,10 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, query, deleteDoc, serverTimestamp, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // IMPORTANT: Make sure you have replaced this with your own Firebase config on GitHub!
         const firebaseConfig = {
   apiKey: "AIzaSyACnJYn5dc89ZDfpFPpDwboN-DfRDJLbe4",
   authDomain: "my-shop-ledger.firebaseapp.com",
@@ -178,6 +179,8 @@
   messagingSenderId: "701734588184",
   appId: "1:701734588184:web:6e7ffca1af9a8843e9986d"
 };
+        
+        const appId = 'digital-shop-ledger';
         
         let db, auth, userId, currentWorkerName;
         let ledgerUnsubscribe = null;
@@ -509,6 +512,21 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
+            if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                document.querySelector('main').innerHTML = `
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-8 rounded-xl shadow-lg" role="alert">
+                        <p class="font-bold text-2xl mb-4">Configuration Error</p>
+                        <p class="text-lg">The app is not connected to a database. You need to replace the placeholder Firebase keys in the code.</p>
+                        <ol class="list-decimal list-inside mt-4 space-y-2">
+                            <li>Go to your project settings on the Firebase website.</li>
+                            <li>Find and copy your <strong>firebaseConfig</strong> keys.</li>
+                            <li>Paste them into the <code>index.html</code> file on GitHub to replace the placeholder.</li>
+                        </ol>
+                    </div>
+                `;
+                return;
+            }
+
             try {
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -524,9 +542,17 @@
                         listenToLedger();
                         listenToShoppingList();
                     } else {
-                        const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                        if (token) { await signInWithCustomToken(auth, token); } 
-                        else { await signInAnonymously(auth); }
+                        signInAnonymously(auth).catch((error) => {
+                            console.error("Anonymous sign-in failed:", error);
+                            userIdEl.textContent = "Connection Failed";
+                            showToast("Error: Could not connect to the database.", "error");
+                            ledgerBody.innerHTML = `<tr><td colspan="10" class="text-center text-red-500 p-8">
+                                <strong>Connection Failed.</strong><br>
+                                Please check your Firebase project settings.<br>
+                                1. Go to Authentication -> Sign-in method.<br>
+                                2. Make sure 'Anonymous' sign-in is enabled.
+                            </td></tr>`;
+                        });
                     }
                 });
 
